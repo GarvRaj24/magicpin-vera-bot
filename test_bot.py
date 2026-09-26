@@ -67,15 +67,16 @@ def test_metadata():
 def test_context_push():
     log_info("Testing POST /v1/context (idempotency & version conflict)...")
     
+    cid = f"test_vertical_{int(time.time() * 1000)}"
     # 1. Push version 1
     sample_cat = {
-        "slug": "test_vertical",
+        "slug": cid,
         "voice": {"tone": "collegial"},
         "offer_catalog": [{"title": "Special @ ₹99"}]
     }
     resp1 = client.post("/v1/context", json={
         "scope": "category",
-        "context_id": "test_vertical",
+        "context_id": cid,
         "version": 1,
         "payload": sample_cat
     })
@@ -86,7 +87,7 @@ def test_context_push():
     # 2. Re-push version 1 (should return 409 stale_version)
     resp2 = client.post("/v1/context", json={
         "scope": "category",
-        "context_id": "test_vertical",
+        "context_id": cid,
         "version": 1,
         "payload": sample_cat
     })
@@ -99,13 +100,13 @@ def test_context_push():
     sample_cat["voice"]["tone"] = "updated_tone"
     resp3 = client.post("/v1/context", json={
         "scope": "category",
-        "context_id": "test_vertical",
+        "context_id": cid,
         "version": 2,
         "payload": sample_cat
     })
     assert resp3.status_code == 200
     assert resp3.json().get("accepted") is True
-    assert contexts[("category", "test_vertical")]["payload"]["voice"]["tone"] == "updated_tone"
+    assert contexts[("category", cid)]["payload"]["voice"]["tone"] == "updated_tone"
     log_pass("Version 2 atomic replacement verified")
 
 

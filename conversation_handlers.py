@@ -152,7 +152,26 @@ class ConversationManager:
                 "rationale": "Merchant explicitly opted out or expressed frustration; gracefully closing conversation with zero spam."
             }
 
-        # 2. Auto-reply Detection
+        # 2. Intent Transition (Commitment / Let's Do It)
+        # CRITICAL: Always prioritize human commitment over canned auto-reply checks.
+        # Switch immediately to ACTION mode with action words (done, sending, draft, here, confirm, proceed, next)
+        # and NEVER ask qualifying questions (would you, do you, can you tell, what if, how about).
+        if self.is_commitment(message):
+            state.history.append({"from": from_role, "msg": message})
+            body = (
+                "Done! I have prepared your action draft and next execution steps here. "
+                "The patient WhatsApp update and Google Business showcase are fully queued. "
+                "Reply CONFIRM to proceed with sending now."
+            )
+            state.history.append({"from": "vera", "msg": body})
+            return {
+                "action": "send",
+                "body": body,
+                "cta": "binary_confirm_cancel",
+                "rationale": "Merchant gave explicit commitment; switching immediately to action execution with concrete next step and zero qualification friction."
+            }
+
+        # 3. Auto-reply Detection
         if self.is_auto_reply(message, state):
             state.canned_auto_replies_seen += 1
             state.history.append({"from": from_role, "msg": message})
@@ -171,24 +190,6 @@ class ConversationManager:
                     "wait_seconds": 14400,
                     "rationale": "Detected canned auto-reply ('Thank you for contacting...'); backing off 4 hours to wait for the actual business owner."
                 }
-
-        # 3. Intent Transition (Commitment / Let's Do It)
-        # CRITICAL RULE: Must use ACTION words (done, sending, draft, here, confirm, proceed, next)
-        # and NEVER ask qualifying questions (would you, do you, can you tell, what if, how about).
-        if self.is_commitment(message):
-            state.history.append({"from": from_role, "msg": message})
-            body = (
-                "Done! I have prepared your action draft and next execution steps here. "
-                "The patient WhatsApp update and Google Business showcase are fully queued. "
-                "Reply CONFIRM to proceed with sending now."
-            )
-            state.history.append({"from": "vera", "msg": body})
-            return {
-                "action": "send",
-                "body": body,
-                "cta": "binary_confirm_cancel",
-                "rationale": "Merchant gave explicit commitment; switching immediately to action execution with concrete next step and zero qualification friction."
-            }
 
         # 4. Curveball / Out-of-scope Redirection
         if self.is_curveball(message):
