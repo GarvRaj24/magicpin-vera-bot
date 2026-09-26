@@ -137,7 +137,23 @@ class ReplyBody(BaseModel):
 # ENDPOINTS
 # =============================================================================
 
+@app.get("/")
+async def root():
+    return {
+        "status": "ok",
+        "service": "magicpin Vera AI Challenge Bot",
+        "endpoints": {
+            "healthz": "/v1/healthz",
+            "metadata": "/v1/metadata",
+            "context": "POST /v1/context",
+            "tick": "POST /v1/tick",
+            "reply": "POST /v1/reply"
+        }
+    }
+
+
 @app.get("/v1/healthz")
+@app.get("/healthz")
 async def healthz():
     """Liveness probe reporting uptime and loaded contexts across all 4 scopes."""
     counts = {"category": 0, "merchant": 0, "customer": 0, "trigger": 0}
@@ -152,6 +168,7 @@ async def healthz():
 
 
 @app.get("/v1/metadata")
+@app.get("/metadata")
 async def metadata():
     """Candidate identity, model selection, and architecture overview."""
     team_members_raw = os.environ.get("TEAM_MEMBERS")
@@ -175,6 +192,7 @@ async def metadata():
 
 
 @app.post("/v1/context")
+@app.post("/context")
 async def push_context(body: ContextPushBody):
     """
     Ingest a context push (category, merchant, customer, or trigger).
@@ -218,6 +236,7 @@ async def push_context(body: ContextPushBody):
 
 
 @app.post("/v1/tick")
+@app.post("/tick")
 async def tick(body: TickBody):
     """
     Simulated clock tick. Inspects available triggers and generates proactive outreach actions.
@@ -277,6 +296,7 @@ async def tick(body: TickBody):
 
 
 @app.post("/v1/reply")
+@app.post("/reply")
 async def reply(body: ReplyBody):
     """
     Receives incoming reply from merchant (or customer) and returns next conversational action.
@@ -293,6 +313,7 @@ async def reply(body: ReplyBody):
 
 
 @app.post("/v1/teardown")
+@app.post("/teardown")
 async def teardown():
     """Wipes in-memory contexts and conversation history cleanly at end of testing."""
     contexts.clear()
